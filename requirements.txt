@@ -1,6 +1,7 @@
 Flask
+gunicorn
+flask-cors
 google-api-python-client
 google-auth
 google-auth-oauthlib
 python-dotenv
-gunicorn
