@@ -26,7 +26,7 @@ COMPONENT_COLUMNS = ['Rent', 'Maintenance', 'Water', 'Electricity', 'Parking']
 app = Flask(__name__, static_folder='public')
 
 # Enable CORS for your frontend only
-CORS(app, origins=["https://rm-1-fidk.onrender.com"])
+CORS(app, origins=["https://rmzepto.onrender.com"])
 
 # ---------------- AUTH ----------------
 def get_credentials():

@@ -246,7 +246,7 @@ document.getElementById("invoiceForm").addEventListener("submit", async function
     });
 
     try{
-        const res = await fetch("http://127.0.0.1:5000/submit_invoice", { method: "POST", body: formData });
+        const res = await fetch("https://rmzepto.onrender.com/submit_invoice", { method: "POST", body: formData });
         const data = await res.json();
         document.getElementById("successMsg").innerText = "Thank you! Invoice submitted. Ticket ID: " + data.ticket_id;
         alert("Invoice Submitted\nTicket ID: " + data.ticket_id);
