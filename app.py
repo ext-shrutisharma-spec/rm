@@ -2,8 +2,9 @@ from flask import Flask, request, jsonify, send_from_directory
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.http import MediaIoBaseUpload
+from google.oauth2.credentials import Credentials
 import io, os, datetime, random
-
+from dotenv import load_dotenv
 # ---------------- SETTINGS ----------------
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets',
           'https://www.googleapis.com/auth/drive.file']
@@ -21,18 +22,32 @@ app = Flask(__name__, static_folder='public')
 
 # ---------------- AUTH ----------------
 def get_credentials():
-    creds_file = 'client_secret.json'
     token_file = 'token.json'
     creds = None
 
     if os.path.exists(token_file):
-        from google.oauth2.credentials import Credentials
         creds = Credentials.from_authorized_user_file(token_file, SCOPES)
     else:
-        flow = InstalledAppFlow.from_client_secrets_file(creds_file, SCOPES)
+        # Create client config from environment variables
+        client_config = {
+            "installed": {
+                "client_id": os.environ.get("GOOGLE_CLIENT_ID"),
+                "project_id": os.environ.get("GOOGLE_PROJECT_ID"),
+                "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+                "token_uri": "https://oauth2.googleapis.com/token",
+                "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+                "client_secret": os.environ.get("GOOGLE_CLIENT_SECRET"),
+                "redirect_uris": os.environ.get("GOOGLE_REDIRECT_URIS").split(',')
+            }
+        }
+
+        flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
         creds = flow.run_local_server(port=0)
+
+        # Save token for future use
         with open(token_file, 'w') as token:
             token.write(creds.to_json())
+
     return creds
 
 creds = get_credentials()
