@@ -1,10 +1,15 @@
 from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS  # <-- Import CORS
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.http import MediaIoBaseUpload
 from google.oauth2.credentials import Credentials
 import io, os, datetime, random
 from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
+
 # ---------------- SETTINGS ----------------
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets',
           'https://www.googleapis.com/auth/drive.file']
@@ -19,6 +24,9 @@ COMPONENT_COLUMNS = ['Rent', 'Maintenance', 'Water', 'Electricity', 'Parking']
 # ------------------------------------------
 
 app = Flask(__name__, static_folder='public')
+
+# Enable CORS for your frontend only
+CORS(app, origins=["https://rm-1-fidk.onrender.com"])
 
 # ---------------- AUTH ----------------
 def get_credentials():
@@ -83,7 +91,7 @@ def submit_invoice():
         component_files = {comp: [] for comp in COMPONENT_COLUMNS}
 
         for comp in COMPONENT_COLUMNS:
-            files = request.files.getlist(f'{comp.lower()}_files[]')  # frontend must send files with this naming
+            files = request.files.getlist(f'{comp.lower()}_files[]')
             for f in files:
                 filename = f"{ticket_id}_{f.filename}"
                 local_path = os.path.join(UPLOAD_FOLDER, filename)
@@ -101,19 +109,16 @@ def submit_invoice():
                 drive_link = file.get('webViewLink')
                 component_files[comp].append(drive_link)
 
-        # Prepare row: [TicketID, Rent Start, Rent End, Name, Mobile, Email, City, GST Type, RentLink, MaintenanceLink, WaterLink, ElectricityLink, ParkingLink, Timestamp]
+        # Prepare row for Google Sheet
         row = [
             ticket_id, rent_start, rent_end, name, mobile, email, city, gst_type
         ]
 
-        # Append component links in order
         for comp in COMPONENT_COLUMNS:
             row.append(', '.join(component_files[comp]))
 
-        # Add timestamp
         row.append(timestamp)
 
-        # Write to Google Sheet
         sheet_service.spreadsheets().values().append(
             spreadsheetId=SPREADSHEET_ID,
             range=SHEET_NAME,
@@ -127,5 +132,7 @@ def submit_invoice():
         print("Error:", e)
         return jsonify({'error': str(e)}), 500
 
+# ---------------- RUN ----------------
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Render will set PORT
+    app.run(debug=True, host='0.0.0.0', port=port)
